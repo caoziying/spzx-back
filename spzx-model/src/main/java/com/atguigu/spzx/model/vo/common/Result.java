@@ -3,6 +3,7 @@ package com.atguigu.spzx.model.vo.common;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+// 统一结果实体类
 @Data
 @Schema(description = "响应结果实体类")
 public class Result<T> {
