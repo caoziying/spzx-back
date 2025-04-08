@@ -1,5 +1,6 @@
 package com.atguigu.spzx.manager.service.impl;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson.JSON;
 import com.atguigu.spzx.common.exception.GuiguException;
@@ -8,6 +9,7 @@ import com.atguigu.spzx.manager.service.SysUserService;
 import com.atguigu.spzx.model.dto.system.LoginDto;
 import com.atguigu.spzx.model.entity.system.SysUser;
 import com.atguigu.spzx.model.vo.common.ResultCodeEnum;
+import com.atguigu.spzx.model.vo.h5.UserInfoVo;
 import com.atguigu.spzx.model.vo.system.LoginVo;
 import io.minio.Digest;
 import jakarta.annotation.Resource;
@@ -30,6 +32,16 @@ public class SysUserServiceImpl implements SysUserService {
 
     @Override
     public LoginVo login(LoginDto loginDto) {
+        // 核对验证码
+        String codeKey = loginDto.getCodeKey();
+        String captcha = loginDto.getCaptcha();
+        String redisCode = redisTemplate.opsForValue().get("user:validate" + codeKey);
+        if(StrUtil.isEmpty(redisCode) || !StrUtil.equalsIgnoreCase(redisCode, captcha)) {
+            throw new GuiguException(ResultCodeEnum.VALIDATECODE_ERROR);
+        }
+        // 验证通过 删除验证码
+        redisTemplate.delete("user:validate" + codeKey);
+
         // 获取用户名，密码
         String userName = loginDto.getUserName();
 
@@ -61,5 +73,16 @@ public class SysUserServiceImpl implements SysUserService {
         LoginVo loginVo = new LoginVo();
         loginVo.setToken(token);
         return loginVo;
+    }
+
+    @Override
+    public UserInfoVo getUserInfo(String token) {
+        String userJson = redisTemplate.opsForValue().get("user:login" + token);
+        return JSON.parseObject(userJson, UserInfoVo.class);
+    }
+
+    @Override
+    public void logout(String token) {
+        redisTemplate.delete("user:login" + token);
     }
 }
