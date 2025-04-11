@@ -60,4 +60,6 @@ public class IndexController {
         sysUserService.logout(token);
         return Result.build(null , ResultCodeEnum.SUCCESS) ;
     }
+
+
 }
